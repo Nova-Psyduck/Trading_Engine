@@ -139,11 +139,26 @@ def run_forward_mode():
             print(f"\n❌ Error in live loop: {e}")
             time.sleep(60)
 
+def run_screener_mode(extra_tickers: list[str] | None = None, strict: bool | None = None,
+                      csv_path: str | None = None, telegram_alerts: bool = True):
+
+    print("\n Running 2/1 VWAP SCREENER...\n")
+    from screener.two_one_screener import run_screener
+    screener_config = CONFIG.copy()
+    if not telegram_alerts:
+        screener_config["SCREENER_TELEGRAM_ALERTS"] = False
+    run_screener(screener_config, extra_tickers=extra_tickers, strict=strict, csv_path=csv_path)
+
 def main():
 
     parser = argparse.ArgumentParser(description="Trading Engine")
-    parser.add_argument("--mode", type=str, choices=["backtest", "forward"], help="Run mode (backtest or forward)")
+    parser.add_argument("--mode", type=str, choices=["backtest", "forward", "screener", "price_alert"], help="Run mode (backtest, forward, screener, or price_alert)")
     parser.add_argument("--use_multi", type=str, choices=["true", "false", "True", "False"], help="Use multi ticker (true/false)")
+    parser.add_argument("--tickers", nargs="*", default=None, help="Extra tickers for screener")
+    parser.add_argument("--file", type=str, default=None, help="Screener ticker file (one per line or comma-separated)")
+    parser.add_argument("--strict", action="store_true", default=None, help="Screener: price must be on correct VWAP side")
+    parser.add_argument("--csv", type=str, default=None, help="Screener: CSV file path to save results")
+    parser.add_argument("--no-telegram", action="store_true", help="Screener: suppress Telegram alerts")
     args = parser.parse_args()
 
     if args.mode:
@@ -151,7 +166,7 @@ def main():
     if args.use_multi is not None:
         CONFIG["USE_MULTI"] = args.use_multi.lower() == "true"
 
-    mode = CONFIG["MODE"]
+    mode = CONFIG["MODE"].lower()
 
     if mode == "backtest":
         run_backtest_mode()
@@ -159,8 +174,33 @@ def main():
     elif mode == "forward":
         run_forward_mode()
 
+    elif mode == "screener":
+        extra_tickers = list(args.tickers or [])
+        if args.file:
+            try:
+                with open(args.file, encoding="utf-8-sig") as ticker_file:
+                    contents = ticker_file.read().replace(",", "\n")
+                extra_tickers.extend(
+                    ticker.strip().upper()
+                    for ticker in contents.splitlines()
+                    if ticker.strip()
+                )
+            except OSError as exc:
+                log.error(f"Could not read ticker file {args.file}: {exc}")
+                return
+        run_screener_mode(
+            extra_tickers=extra_tickers or None,
+            strict=args.strict,
+            csv_path=args.csv,
+            telegram_alerts=not args.no_telegram,
+        )
+
+    elif mode == "price_alert":
+        from alerts.price_alert_monitor import run_price_alert_monitor
+        run_price_alert_monitor()
+
     else:
-        print(" Invalid MODE in config. Use BACKTEST or FORWARD.")
+        print(" Invalid MODE in config. Use backtest, forward, screener, or price_alert.")
 
 
 if __name__ == "__main__":

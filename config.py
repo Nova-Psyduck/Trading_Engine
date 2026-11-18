@@ -44,7 +44,12 @@ CONFIG = {
     "RESULTS_FOLDER": "results",
 
     # MODES
-    "MODE": "backtest",  # "backtest" or "forward"
+    "MODE": "backtest",  # "backtest", "forward", or "screener"
+
+    # 2/1 VWAP SCREENER CONFIG
+    "SCREENER_STRICT": False,           # if True, price must also be on the same side of daily VWAP
+    "SCREENER_TELEGRAM_ALERTS": True,   # set False to suppress Telegram alerts from screener
+    "SCREENER_CSV_PATH": "",            # optional path to save screener results (e.g. "results/screener.csv")
 
     # Google Sheet upload
     "UPLOAD_TO_SHEETS": True,           # set False to skip auto-upload after backtest

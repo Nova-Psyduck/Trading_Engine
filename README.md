@@ -13,6 +13,7 @@ The system is designed around a clean **separation of concerns** — data flows 
 | `strategies/` | Generates trade signals (LONG / SHORT / None) |
 | `backtest/` | Simulates trades on historical data and produces performance stats |
 | `forward_test/` | Runs strategy on live data without real money (paper trading) |
+| `screener/` | Scans tickers for 2/1 daily vs 2-day VWAP setups and Floor Pivot targets |
 | `upload/` | Uploads backtest results (trade logs + summary rows) to Google Sheets |
 | `alerts/` | Sends trade signals directly to Telegram |
 | `config.py` | Central settings file — change everything from one place |
@@ -58,6 +59,11 @@ Use `uv run` instead of `python` to ensure the correct virtual environment is us
 uv run main.py                          # uses MODE from config.py
 uv run main.py --mode backtest          # force backtest mode
 uv run main.py --mode forward           # force forward test mode
+uv run main.py --mode screener          # run 2/1 VWAP screener
+uv run main.py --mode screener --use_multi true # multi-ticker screener
+uv run main.py --mode screener --tickers AAPL MSFT --strict --csv results/screener.csv
+uv run main.py --mode screener --file tickers.txt --no-telegram
+uv run two_one_screener.py              # standalone screener CLI
 uv run python data/download_polygon_data.py       # fetch historical data from Polygon.io
 uv run main.py --mode backtest --use_multi true   # multi-ticker backtest
 uv run upload.py                        # upload past runs to Google Sheets
@@ -78,10 +84,15 @@ trading_engine/
 ├── indicators/
 │   ├── ema.py                      ← Exponential Moving Average
 │   ├── atr.py                      ← Average True Range (volatility)
+│   ├── vwap.py                     ← Volume Weighted Average Price (VWAP)
 │
 ├── strategies/
 │   ├── ema_pullback.py             ← 4-strategy signal engine
 │   ├── ema_strategy.md             ← Full strategy documentation
+│
+├── screener/
+│   ├── two_one_screener.py         ← 2/1 daily vs 2-day VWAP screener engine
+│   ├── screener.md                 ← Full screener documentation
 │
 ├── backtest/
 │   ├── backtest_engine.py          ← Simulates trades on historical data
