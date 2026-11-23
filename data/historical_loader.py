@@ -17,6 +17,9 @@ def load_historical_data(ticker, interval, start=None, end=None):
         
     print(f"Loading local data from {filename}...")
     df = pd.read_csv(filepath)
+
+    # Match the live loader's OHLCV schema regardless of CSV header casing.
+    df.columns = [str(column).strip().lower() for column in df.columns]
     
     # Ensure datetime index is set correctly and sorted
     df['datetime'] = pd.to_datetime(df['datetime'])
